@@ -1,0 +1,68 @@
+cmake_minimum_required(VERSION 2.6)
+
+project(Hash C)
+
+# Définition du suffixe du mode Debug par défaut
+if(NOT DEFINED CMAKE_DEBUG_POSTFIX)
+	set(CMAKE_DEBUG_POSTFIX "-Debug")
+endif()
+
+# Définition du suffixe du mode Debug de la librairie LIST par défaut
+if(NOT DEFINED LIST_DEBUG_POSTFIX)
+	set(LIST_DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+endif()
+
+# Recherche du fichier LIST.h dans les chemins spécifiés dans les variables
+# CMAKE_PREFIX_PATH et CMAKE_INCLUDE_PATH
+find_file(LIST_H "LIST.h")
+if(LIST_H)
+	# Calcul du dossier
+	get_filename_component(LIST_INCLUDE_DIR ${LIST_H} DIRECTORY)
+	# Ajout du dossier pour la recherche des fichiers entre chevrons
+	include_directories("${LIST_INCLUDE_DIR}")
+endif(LIST_H)
+
+# Recherche de la librairie LIST dans les chemins spécifiés dans les variables
+# CMAKE_PREFIX_PATH et CMAKE_LIBRARY_PATH
+find_library(LIST_LIB LIST)
+if(LIST_LIB)
+	# Calcul du dossier
+	get_filename_component(LIST_LIB_DIR ${LIST_LIB} DIRECTORY)
+	# Ajout du dossier pour la recherche des librairies
+	link_directories("${LIST_LIB_DIR}")
+endif(LIST_LIB)
+
+# Idem pour la librairie en mode debug
+find_library(LIST_LIB "LIST${LIST_DEBUG_POSTFIX}")
+if(LIST_LIB)
+	get_filename_component(LIST_LIB_DIR ${LIST_LIB} DIRECTORY)
+	link_directories("${LIST_LIB_DIR}")
+endif(LIST_LIB)
+
+add_library(hash SHARED hash.c hash.h)
+
+# Aggrégation avec la librairie LIST dans le cas optimized et
+# LIST-Debug en mode debug
+target_link_libraries(hash optimized LIST debug "LIST${LIST_DEBUG_POSTFIX}")
+
+install(
+	TARGETS hash
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+	RUNTIME DESTINATION bin
+)
+
+install(
+	FILES hash.h
+	DESTINATION include
+)
+
+enable_testing()
+
+add_executable(test-hash test-hash.c)
+add_dependencies(test-hash hash)
+target_link_libraries(test-hash hash)
+add_test(test-hash ./test-hash)
+
+
+
